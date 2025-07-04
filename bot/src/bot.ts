@@ -59,7 +59,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .addFields(
         { name: 'X/Y/Z coordinates', value: 'Open your map, hover over your mortar or target, and read the coordinates (e.g., x:6061 y:5718 z:88).' },
         { name: 'Elevation (Z)', value: 'This is the third number in the coordinates, or check your GPS/altimeter.' },
-        { name: 'Shell type', value: 'Choose Russian (OF-832DU) for 2Б14 or NATO (M821 HE) for M252.' }
+        { name: 'Shell type', value: 'Choose from: O-832DU (Russian HE), D-832DU (Russian Smoke), S-832C (Russian Illumination), M821 HE (NATO HE), M853A1 Illumination (NATO Illumination), or M819 Smoke (NATO Smoke).' }
       )
       .setFooter({ text: 'Tip: You only need to enter coordinates and elevation. The bot will do the rest!' });
 

@@ -32,11 +32,15 @@ export async function registerCommands(token: string, clientId: string) {
         .setRequired(true))
       .addStringOption(o => o
         .setName('shell_type')
-        .setDescription('Choose shell type: Russian (OF-832DU) or NATO (M821 HE)')
+        .setDescription('Choose shell type')
         .setRequired(true)
         .addChoices(
-          { name: 'Russian (OF-832DU)', value: 'OF-832DU' },
-          { name: 'NATO (M821 HE)', value: 'M821 HE' }
+          { name: 'O-832DU (Russian HE)', value: 'O-832DU' },
+          { name: 'D-832DU (Russian Smoke)', value: 'D-832DU' },
+          { name: 'S-832C (Russian Illumination)', value: 'S-832C' },
+          { name: 'M821 HE (NATO HE)', value: 'M821 HE' },
+          { name: 'M853A1 Illumination (NATO Illumination)', value: 'M853A1 Illumination' },
+          { name: 'M819 Smoke (NATO Smoke)', value: 'M819 Smoke' }
         )
       )
       .toJSON(),
