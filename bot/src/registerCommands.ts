@@ -5,35 +5,44 @@ export async function registerCommands(token: string, clientId: string) {
   const commands = [
     new SlashCommandBuilder()
       .setName('mortar')
-      .setDescription('Calculate a mortar firing solution')
+      .setDescription('Calculate a mortar firing solution from coordinates')
+      .addNumberOption(o => o
+        .setName('mortar_x')
+        .setDescription("Your mortar's X coordinate (e.g., 6061)")
+        .setRequired(true))
+      .addNumberOption(o => o
+        .setName('mortar_y')
+        .setDescription("Your mortar's Y coordinate (e.g., 5718)")
+        .setRequired(true))
+      .addNumberOption(o => o
+        .setName('mortar_z')
+        .setDescription("Your mortar's elevation (Z) in meters (e.g., 88)")
+        .setRequired(true))
+      .addNumberOption(o => o
+        .setName('target_x')
+        .setDescription("Target's X coordinate (e.g., 5537)")
+        .setRequired(true))
+      .addNumberOption(o => o
+        .setName('target_y')
+        .setDescription("Target's Y coordinate (e.g., 6093)")
+        .setRequired(true))
+      .addNumberOption(o => o
+        .setName('target_z')
+        .setDescription("Target's elevation (Z) in meters (e.g., 96)")
+        .setRequired(true))
       .addStringOption(o => o
-        .setName('mortar_grid')
-        .setDescription('Mortar 10-digit grid coordinate')
-        .setRequired(true))
-      .addNumberOption(o => o
-        .setName('mortar_elevation')
-        .setDescription('Mortar elevation (meters)')
-        .setRequired(true))
-      .addStringOption(o => o
-        .setName('callsign')
-        .setDescription('Mortar callsign')
-        .setRequired(true))
-      .addStringOption(o => o
-        .setName('fo_grid')
-        .setDescription('Forward Observer grid')
-        .setRequired(true))
-      .addNumberOption(o => o
-        .setName('fo_elevation')
-        .setDescription('Forward Observer elevation (meters)')
-        .setRequired(true))
-      .addNumberOption(o => o
-        .setName('azimuth')
-        .setDescription('Azimuth to target (degrees)')
-        .setRequired(true))
-      .addNumberOption(o => o
-        .setName('distance')
-        .setDescription('Distance to target (meters)')
-        .setRequired(true))
+        .setName('shell_type')
+        .setDescription('Choose shell type: Russian (OF-832DU) or NATO (M821 HE)')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Russian (OF-832DU)', value: 'OF-832DU' },
+          { name: 'NATO (M821 HE)', value: 'M821 HE' }
+        )
+      )
+      .toJSON(),
+    new SlashCommandBuilder()
+      .setName('howto')
+      .setDescription('How to get the required coordinates and elevation')
       .toJSON()
   ];
 
