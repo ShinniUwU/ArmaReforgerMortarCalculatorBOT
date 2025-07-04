@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events, ChatInputCommandInteraction } from 'discord.js';
+import { Client, GatewayIntentBits, Events, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { config } from 'dotenv';
 import { execFile } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
@@ -52,8 +52,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
     const result = await runPython(task);
+    const parsed = JSON.parse(result);
+    const embed = new EmbedBuilder()
+      .setTitle('🎯 Firing Solution')
+      .setDescription(parsed.quick_bar)
+      .addFields({ name: 'Details', value: '```' + parsed.details + '```' });
     await interaction.reply({
-      content: `🎯 **Firing Solution**\n\`\`\`\n${result}\n\`\`\``,
+      embeds: [embed],
       ephemeral: true
     });
   } catch {

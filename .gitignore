@@ -1,28 +1,18 @@
-# Distribution / packaging
-# Generated icon file
-# Python cache
-# Temporary build scripts
-# User data
-# Virtual environments
+# Python
 *.pyc
-*.spec
-.venv/
-PROJECT_PLAN.md
 __pycache__/
-build.bat
-build/
-clear_icon_cache.bat
-create_icon.py
-dist/
-fire_missions.json
-mortar_icon.ico
-node_modules/
-updates.txt
+.venv/
 venv/
-
 backend/__pycache__/
 backend/.venv/
 backend/venv/
+
+# Node.js
+node_modules/
 bot/node_modules/
+
+# Build artifacts
+dist/
+build/
 bot/dist/
 bot/build/

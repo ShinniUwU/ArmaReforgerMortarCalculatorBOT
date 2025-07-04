@@ -29,6 +29,38 @@ def worker_thread(task_queue, result_queue):
         finally:
             task_queue.task_done()
 
+def format_solution_for_discord(solutions, task):
+    # Only handling single-mortar for now (can be extended)
+    mortar = solutions[0]["mortar"]
+    target_coords = solutions[0]["target_coords"]
+    least = solutions[0]["least_tof"]
+    most = solutions[0]["most_tof"]
+    ammo = task["ammo"]
+    fo_grid = task["fo_grid_str"]
+    fo_elev = task["fo_elev"]
+    azimuth = task["fo_azimuth_deg"]
+    dist = task["fo_dist"]
+    elev_diff = target_coords[2] - mortar["elev"]
+    # Ring = charge (0-indexed)
+    ring = least["charge"]
+    # Quick bar
+    quick_bar = f"↔{int(dist)}m ↑{int(elev_diff)}m {azimuth:.1f}° | ↑{int(least['elev'])}mils ↔{int(most['elev'])}mils | Ring {ring}"
+    # Details
+    details = (
+        f"Mortar: {mortar['callsign']}\n"
+        f"Mortar Grid: {task['mortars'][0]['grid']}\n"
+        f"Target Grid: {fo_grid}\n"
+        f"Distance: {int(dist)} m\n"
+        f"Elevation diff: {int(elev_diff)} m\n"
+        f"Azimuth: {azimuth:.1f}°\n"
+        f"Elevation (mils): {int(least['elev'])}\n"
+        f"Ring: {ring}\n"
+        f"Time of Flight: {least['tof']:.1f} s\n"
+        f"Dispersion: {least['dispersion']} m\n"
+        f"Ammo: {ammo}\n"
+    )
+    return {"quick_bar": quick_bar, "details": details}
+
 def process_task(task):
     """
     Processes a single calculation task.
@@ -36,7 +68,7 @@ def process_task(task):
     mission_type = task['mission_type']
     ammo = task['ammo']
     creep_direction = task['creep_direction']
-    
+
     fo_grid_str = task['fo_grid_str']
     fo_elev = task['fo_elev']
     fo_azimuth_deg = task['fo_azimuth_deg']
@@ -44,7 +76,7 @@ def process_task(task):
     fo_elev_diff = task['fo_elev_diff']
     corr_lr = task['corr_lr']
     corr_ad = task['corr_ad']
-    
+
     mortars_data = task['mortars']
 
     # Reconstruct mortar data, parsing grid strings
@@ -76,4 +108,8 @@ def process_task(task):
     else:
         raise ValueError(f"Invalid mission type: {mission_type}")
 
-    return solutions
+    # Out of range handling
+    if not solutions or not solutions[0]['least_tof']:
+        return {"quick_bar": f"↔{int(task['fo_dist'])}m ↑{int(task['fo_elev'])}m {task['fo_azimuth_deg']:.1f}° | Out of range", "details": "No valid firing solution for these parameters."}
+
+    return format_solution_for_discord(solutions, task)
