@@ -15,12 +15,23 @@ This bot automates the process of calculating firing solutions for mortars in Ar
 - Supports multiple mission types (regular, barrage, creeping, etc.)
 - Easy-to-use slash commands
 - Python backend for accurate ballistics
+- **Accurate elevation correction:** Elevation mils are now calculated as (|elev diff|/100) * delev, matching in-game/reference calculator outputs
 
 ## ⚙️ How It Works
 
 1. Use a Discord slash command to provide your mortar and target coordinates.
 2. The bot sends this data to a Python backend that performs the calculations.
 3. The bot replies with the firing solution (azimuth, elevation, charge, etc.)
+
+### 🔎 Elevation in Meters vs. Mils
+
+- **Elevation in meters**: The vertical difference between your mortar and the target (e.g., target is 48m higher).
+- **Elevation in mils**: The angular correction needed to account for that elevation difference, used to adjust your mortar's sight.
+- **How the bot calculates elevation correction:**
+  - The bot interpolates the "D ELEV MIL" value from the ballistic table for your range.
+  - It then calculates:
+    `Elevation mils = (|elev diff| / 100) * delev`
+  - This matches the logic of in-game and reference artillery calculators.
 
 ## 🛠️ Getting Started
 
