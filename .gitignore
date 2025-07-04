@@ -1,4 +1,3 @@
-
 # Distribution / packaging
 # Generated icon file
 # Python cache
@@ -20,3 +19,10 @@ mortar_icon.ico
 node_modules/
 updates.txt
 venv/
+
+backend/__pycache__/
+backend/.venv/
+backend/venv/
+bot/node_modules/
+bot/dist/
+bot/build/
