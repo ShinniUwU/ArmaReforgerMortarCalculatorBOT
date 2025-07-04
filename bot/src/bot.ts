@@ -4,6 +4,7 @@ import { execFile } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { registerCommands } from './registerCommands';
 
 config();
 
@@ -69,4 +70,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+(async () => {
+  await registerCommands(process.env.DISCORD_TOKEN!, process.env.CLIENT_ID!);
+  client.login(process.env.DISCORD_TOKEN);
+})();

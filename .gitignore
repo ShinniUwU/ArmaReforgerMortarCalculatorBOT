@@ -16,3 +16,4 @@ dist/
 build/
 bot/dist/
 bot/build/
+bot/.env
