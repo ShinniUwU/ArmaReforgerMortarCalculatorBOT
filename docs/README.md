@@ -1,74 +1,170 @@
-# Arma Reforger Mortar Calculator Discord Bot (WIP)
+# Arma Reforger Mortar Calculator Discord Bot
 
-A modern Discord bot for Arma Reforger that lets you calculate mortar strikes by simply entering your mortar and target coordinates—**no Forward Observer required**. Designed to streamline indirect fire missions for solo or small teams.
+A modern Discord bot for Arma Reforger that calculates precise mortar firing solutions using coordinates. **No Forward Observer required** - just enter your mortar and target positions to get accurate azimuth, elevation, and charge settings.
 
 ---
 
-## 🚀 Project Overview
+## 🎯 Features
 
-This bot automates the process of calculating firing solutions for mortars in Arma Reforger. Enter your mortar's position and the enemy target's coordinates, and the bot will return the azimuth and elevation needed to hit your mark.
+- **Precise Calculations**: Uses real ballistics data for both NATO (M252) and Russian (2B14) mortars
+- **Automatic Mortar Selection**: Bot automatically selects the correct mortar model based on shell type
+- **Multiple Shell Types**: Support for HE, Smoke, and Illumination rounds
+- **Discord Integration**: Simple slash commands for easy access
+- **Python Backend**: Accurate ballistics calculations with interpolation
+- **Real-time Results**: Get firing solutions instantly in Discord
 
-## ✨ Features
+### Supported Equipment
 
-- Calculate mortar firing solutions directly in Discord
-- No need for a second person (FO) to spot targets
-- Supports multiple mission types (regular, barrage, creeping, etc.)
-- Easy-to-use slash commands
-- Python backend for accurate ballistics
-- **Accurate elevation correction:** Elevation mils are now calculated as (|elev diff|/100) * delev, matching in-game/reference calculator outputs
+**NATO (M252 Mortar):**
+- HE M821 (High Explosive)
+- M853A1 Illumination
+- M819 Smoke
 
-## ⚙️ How It Works
+**Russian (2B14 Mortar):**
+- O-832DU (High Explosive)
+- D-832DU (Smoke)
+- S-832C (Illumination)
 
-1. Use a Discord slash command to provide your mortar and target coordinates.
-2. The bot sends this data to a Python backend that performs the calculations.
-3. The bot replies with the firing solution (azimuth, elevation, charge, etc.)
+---
 
-### 🔎 Elevation in Meters vs. Mils
+## 🚀 Quick Start
 
-- **Elevation in meters**: The vertical difference between your mortar and the target (e.g., target is 48m higher).
-- **Elevation in mils**: The angular correction needed to account for that elevation difference, used to adjust your mortar's sight.
-- **How the bot calculates elevation correction:**
-  - The bot interpolates the "D ELEV MIL" value from the ballistic table for your range.
-  - It then calculates:
-    `Elevation mils = (|elev diff| / 100) * delev`
-  - This matches the logic of in-game and reference artillery calculators.
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.8+
+- Discord Bot Token and Client ID
 
-## 🛠️ Getting Started
+### Installation
 
-1. **Clone the repo:**
-   ```sh
-   git clone <this-repo-url>
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
    cd ArmaReforgerMortarCalculatorBOT
    ```
-2. **Install dependencies:**
-   - For the Discord bot (Node.js/TypeScript):
-     ```sh
-     cd bot
-     npm install
-     ```
-   - For the backend (Python):
-     ```sh
-     cd ../backend
-     pip install -r requirements.txt
-     ```
-3. **Configure environment variables:**
-   - Copy `.env.example` to `.env` in the `bot/` directory and fill in your Discord bot token and client ID.
-4. **Run the bot:**
-   - In one terminal, start the Python backend (if needed).
-   - In another terminal, start the Discord bot:
-     ```sh
-     cd bot
-     npm run build && npm start
-     ```
 
-## 🗺️ Roadmap
+2. **Install bot dependencies:**
+   ```bash
+   cd bot
+   npm install
+   ```
 
-- [ ] Add support for more ammo types and maps
-- [ ] Web dashboard for mission logs
-- [ ] Advanced targeting modes
-- [ ] Error handling and user feedback improvements
-- [ ] Full documentation and usage examples
+3. **Install Python dependencies:**
+   ```bash
+   cd ../backend
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment:**
+   ```bash
+   cd ../bot
+   cp .env.example .env
+   # Edit .env with your Discord bot token and client ID
+   ```
+
+5. **Start the bot:**
+   ```bash
+   npm start
+   ```
+
+---
+
+## 📖 Usage
+
+### Basic Command
+```
+/mortar mortar_x:4825 mortar_y:7054 mortar_z:176 target_x:5535 target_y:6075 target_z:96 shell_type:O-832DU (Russian HE)
+```
+
+### Command Parameters
+- **mortar_x/y/z**: Your mortar's coordinates and elevation
+- **target_x/y/z**: Target's coordinates and elevation
+- **shell_type**: Choose from available shell types
+
+### Output Format
+```
+🎯 Firing Solution
+↔1209m ⬆80m 144.1° | ⬆1020mils ↔2402mils
+
+Details
+Distance: 1209 m
+Elevation: 80 m
+Azimuth: 144.1° (2402 mils)
+Distance mils: 989 mils
+Elevation mils: 31 mils
+Total: 1020 mils
+Ring: 2
+Time of Flight: 21.2 s
+Dispersion: 19 m
+```
+
+### Help Command
+```
+/howto
+```
+Shows detailed instructions for getting coordinates and elevation values.
+
+---
+
+## 🔧 Technical Details
+
+### Architecture
+- **Frontend**: Discord.js bot with TypeScript
+- **Backend**: Python with precise ballistics calculations
+- **Data**: Modern mortars data structure with interpolation
+
+### Ballistics System
+- **Distance Mils**: Interpolated from ballistic tables
+- **Elevation Mils**: Calculated as `(|elev_diff| / 100) * delev`
+- **Azimuth**: Precise calculation with proper rounding
+- **Ring Selection**: Automatic based on range and elevation
+
+### Coordinate System
+- Uses Arma Reforger's coordinate system
+- Automatic distance and azimuth calculation
+- Elevation difference compensation
+
+---
+
+## 🛠️ Development
+
+### Project Structure
+```
+ArmaReforgerMortarCalculatorBOT/
+├── bot/                 # Discord bot (TypeScript)
+│   ├── src/
+│   │   ├── bot.ts      # Main bot logic
+│   │   └── registerCommands.ts
+│   └── package.json
+├── backend/            # Python backend
+│   ├── ballistics.py   # Mortar data and calculations
+│   ├── calculations.py # Mission calculations
+│   └── worker.py       # Task processing
+└── docs/              # Documentation
+```
+
+### Adding New Shells
+1. Add shell data to `backend/ballistics.py`
+2. Update shell mappings in `bot/src/bot.ts`
+3. Add shell option in `bot/src/registerCommands.ts`
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+---
 
 ## 📄 License
 
-MIT License. See [docs/LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## 🆘 Support
+
+For issues, questions, or feature requests, please open an issue on GitHub.

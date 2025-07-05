@@ -8,11 +8,13 @@ from calculations import (
     calculate_large_barrage,
     calculate_creeping_barrage,
 )
-from ballistics import BALLISTIC_DATA
+from ballistics import mortars
+from decimal import Decimal, ROUND_HALF_UP
+import sys
 
-def get_min_max_elev(ammo, charge):
-    charge_data = BALLISTIC_DATA[ammo][charge]
-    elevs = [v['elev'] for v in charge_data['ranges'].values()]
+def get_min_max_elev(mortar_model, shell_type, ring):
+    charge_data = mortars[mortar_model][shell_type][ring]
+    elevs = [v[0] for v in charge_data['Dists'].values()]
     return min(elevs), max(elevs)
 
 def worker_thread(task_queue, result_queue):
@@ -35,32 +37,42 @@ def interpolate_table(table, value):
             x0, x1 = keys[i], keys[i+1]
             y0, y1 = table[x0], table[x1]
             ratio = (value - x0) / (x1 - x0)
-            return {k: y0[k] + (y1[k] - y0[k]) * ratio for k in y0}
-    return table[keys[0]] if value < keys[0] else table[keys[-1]]
+            return {
+                'elev': y0[0] + (y1[0] - y0[0]) * ratio,
+                'tof': y0[1] + (y1[1] - y0[1]) * ratio,
+                'delev': y0[2] + (y1[2] - y0[2]) * ratio
+            }
+    y = table[keys[0]] if value < keys[0] else table[keys[-1]]
+    return {'elev': y[0], 'tof': y[1], 'delev': y[2]}
 
 def format_solution_for_discord(solutions, task):
     mortar = solutions[0]["mortar"]
     target_coords = solutions[0]["target_coords"]
     least = solutions[0]["least_tof"]
-    ammo = task["ammo"]
+    mortar_model = mortar["model"]
+    shell_type = mortar["shell_type"]
+    ring = least["charge"]
     azimuth = task["fo_azimuth_deg"]
     dist = task["fo_dist"]
     elev_diff = target_coords[2] - mortar["elev"]
-    ring = least["charge"]
-
     # Interpolate ballistic table for this distance
-    charge_data = BALLISTIC_DATA[ammo][ring]['ranges']
+    charge_data = mortars[mortar_model][shell_type][ring]['Dists']
     interp = interpolate_table(charge_data, dist)
-    distance_mils = round(interp['elev'])
-    elevation_mils = round((abs(elev_diff) / 100) * interp['delev'])
+    distance_mils = int(interp['elev'])
+    elevation_mils = int((abs(elev_diff) / 100) * interp['delev'])
     total_mils = distance_mils + elevation_mils
-    degree_mils = round(azimuth * 17.777778)
-
+    azimuth_decimal = Decimal(str(azimuth))
+    azimuth_display = float(azimuth_decimal.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP))
+    # Use correct mils system for Russian vs NATO
+    if mortar_model == '2B14':
+        degree_mils = int((azimuth_decimal * Decimal('16.6666666667')).to_integral_value(rounding=ROUND_HALF_UP))
+    else:
+        degree_mils = int((azimuth_decimal * Decimal('17.7777777778')).to_integral_value(rounding=ROUND_HALF_UP))
+    print(f"DEBUG: azimuth for mils = {azimuth}, degree_mils = {degree_mils}", file=sys.stderr)
     quick_bar = (
-        f"↔{int(dist)}m ⬆{abs(int(elev_diff))}m {azimuth:.1f}° | ⬆{total_mils}mils ↔{degree_mils}mils"
+        f"↔{int(dist)}m ⬆{abs(int(elev_diff))}m {azimuth_display:.1f}° | ⬆{total_mils}mils ↔{degree_mils}mils"
     )
-
-    mortar_coords = task['mortars'][0]['coords']
+    mortar_coords = mortar['coords']
     mortar_coords_str = f"x:{mortar_coords[0]} y:{mortar_coords[1]} z:{mortar_coords[2]}"
     target_coords_str = f"x:{target_coords[0]} y:{target_coords[1]} z:{target_coords[2]}"
     details = (
@@ -75,15 +87,17 @@ def format_solution_for_discord(solutions, task):
         f"Ring: {ring}\n"
         f"Time of Flight: {least['tof']:.1f} s\n"
         f"Dispersion: {least['dispersion']} m\n"
-        f"Ammo: {ammo}\n"
+        f"Shell: {shell_type}\n"
+        f"Mortar: {mortar_model}\n"
     )
     return {"quick_bar": quick_bar, "details": details}
 
 def process_task(task):
     mission_type = task['mission_type']
-    ammo = task['ammo']
+    mortar_model = task['mortar_model']
+    shell_type = task['shell_type']
+    ring = task['ring']
     creep_direction = task['creep_direction']
-
     fo_grid_str = task['fo_grid_str']
     fo_elev = task['fo_elev']
     fo_azimuth_deg = task['fo_azimuth_deg']
@@ -91,10 +105,7 @@ def process_task(task):
     fo_elev_diff = task['fo_elev_diff']
     corr_lr = task['corr_lr']
     corr_ad = task['corr_ad']
-
     mortars_data = task['mortars']
-
-    # Accept direct coordinates if provided, else parse grid
     mortars = []
     for m_data in mortars_data:
         if "coords" in m_data and m_data["coords"]:
@@ -106,10 +117,10 @@ def process_task(task):
         mortars.append({
             "coords": coords,
             "elev": m_data['elev'],
-            "callsign": m_data['callsign']
+            "callsign": m_data['callsign'],
+            "model": mortar_model,
+            "shell_type": shell_type
         })
-
-    # If target_coords is provided, use it directly; else, calculate from grid/azimuth/distance
     if "target_coords" in task and task["target_coords"]:
         initial_target = tuple(task["target_coords"])
     else:
@@ -118,24 +129,19 @@ def process_task(task):
         )
         initial_target_elev = fo_elev + fo_elev_diff
         initial_target = (initial_target_easting, initial_target_northing, initial_target_elev)
-
-    # Dispatch to the correct calculation function based on mission type
     try:
         if mission_type == "Regular":
-            solutions = calculate_regular_mission(mortars, initial_target, ammo)
+            solutions = calculate_regular_mission(mortars, initial_target, mortar_model, shell_type, ring)
         elif mission_type == "Small Barrage":
-            solutions = calculate_small_barrage(mortars, initial_target, ammo)
+            solutions = calculate_small_barrage(mortars, initial_target, mortar_model, shell_type, ring)
         elif mission_type == "Large Barrage":
-            solutions = calculate_large_barrage(mortars, initial_target, ammo)
+            solutions = calculate_large_barrage(mortars, initial_target, mortar_model, shell_type, ring)
         elif mission_type == "Creeping Barrage":
-            solutions = calculate_creeping_barrage(mortars, initial_target, creep_direction, ammo)
+            solutions = calculate_creeping_barrage(mortars, initial_target, creep_direction, mortar_model, shell_type, ring)
         else:
             raise ValueError(f"Invalid mission type: {mission_type}")
     except ValueError as e:
         return {"quick_bar": f"↔{int(fo_dist)}m ↑{int(fo_elev)}m {fo_azimuth_deg:.1f}° | Out of range", "details": f"No valid firing solution: {str(e)}"}
-
-    # Out of range handling
     if not solutions or not solutions[0]['least_tof']:
         return {"quick_bar": f"↔{int(fo_dist)}m ↑{int(fo_elev)}m {fo_azimuth_deg:.1f}° | Out of range", "details": "No valid firing solution for these parameters."}
-
     return format_solution_for_discord(solutions, task)
