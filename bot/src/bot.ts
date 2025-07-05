@@ -77,28 +77,45 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const tz = interaction.options.getNumber('target_z', true);
     const shellType = interaction.options.getString('shell_type', true);
 
+    // Map shell types to mortar models and backend shell names
+    const shellMappings = {
+      'O-832DU': { mortar: '2B14', shell: 'HE O-832DU' },
+      'D-832DU': { mortar: '2B14', shell: 'Smoke D-832DU' },
+      'S-832C': { mortar: '2B14', shell: 'Illum S-832C' },
+      'M821 HE': { mortar: 'M252', shell: 'HE M821' },
+      'M853A1 Illumination': { mortar: 'M252', shell: 'Illum M853A1' },
+      'M819 Smoke': { mortar: 'M252', shell: 'Smoke M819' }
+    };
+
+    const mapping = shellMappings[shellType as keyof typeof shellMappings] || { mortar: 'M252', shell: shellType };
+    const mortarModel = mapping.mortar;
+    const shell = mapping.shell;
+    const ring = 2;
+
     const { distance, azimuth, elev_diff } = calculateFromCoords(mx, my, mz, tx, ty, tz);
 
-  const task = {
-    mission_type: 'Regular',
-      ammo: shellType,
-    creep_direction: 0,
+    const task = {
+      mission_type: 'Regular',
+      mortar_model: mortarModel,
+      shell_type: shell,
+      ring: ring,
+      creep_direction: 0,
       fo_grid_str: '', // Not needed, but backend expects it
       fo_elev: mz,
       fo_azimuth_deg: azimuth,
       fo_dist: distance,
       fo_elev_diff: elev_diff,
-    corr_lr: 0,
-    corr_ad: 0,
-    mortars: [
-      {
+      corr_lr: 0,
+      corr_ad: 0,
+      mortars: [
+        {
           coords: [mx, my, mz],
           elev: mz,
-          callsign: shellType
+          callsign: shell
         }
       ],
       target_coords: [tx, ty, tz]
-  };
+    };
 
   try {
     const result = await runPython(task);
