@@ -63,7 +63,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       )
       .setFooter({ text: 'Tip: You only need to enter coordinates and elevation. The bot will do the rest!' });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: 4096 });
     return;
   }
 
@@ -107,7 +107,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (parsed.error === 'out_of_range' || parsed.quick_bar?.includes('Out of range')) {
         await interaction.reply({
           content: '❌ No valid firing solution: Target is out of range for this shell.',
-          ephemeral: true
+          flags: 4096
         });
         return;
       }
@@ -118,13 +118,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .addFields({ name: 'Details', value: '```' + parsed.details + '```' });
     await interaction.reply({
         embeds: [embed],
-      ephemeral: true
+      flags: 4096
     });
     } catch (e) {
       console.error('Bot error:', e);
     await (interaction as ChatInputCommandInteraction).reply({
         content: '❌ Error calculating firing solution. (Check bot logs for details.)',
-      ephemeral: true
+        flags: 4096
     });
     }
     return;

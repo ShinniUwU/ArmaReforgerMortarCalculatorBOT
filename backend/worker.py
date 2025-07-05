@@ -57,8 +57,7 @@ def format_solution_for_discord(solutions, task):
     degree_mils = round(azimuth * 17.777778)
 
     quick_bar = (
-        f"↔{int(dist)}m Elevation:{abs(int(elev_diff))}m ({elevation_mils} mils) {azimuth:.1f}° | "
-        f"{distance_mils}mils + {elevation_mils}mils = {total_mils}mils (azimuth: {degree_mils} mils)"
+        f"↔{int(dist)}m ⬆{abs(int(elev_diff))}m {azimuth:.1f}° | ⬆{total_mils}mils ↔{degree_mils}mils"
     )
 
     mortar_coords = task['mortars'][0]['coords']
